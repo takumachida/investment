@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Group Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Investment Group Management</h1>
+
+    <!-- Term Management Form -->
+    <section>
+        <h2>Add New Term</h2>
+        <form id="termForm">
+            <label for="termDuration">Term Duration (Months):</label>
+            <input type="number" id="termDuration" required><br>
+            <label for="numShares">Number of Shares:</label>
+            <input type="number" id="numShares" required><br>
+            <label for="sharePrice">Price Per Share:</label>
+            <input type="number" id="sharePrice" required><br>
+            <label for="interestRate">Interest Rate (%):</label>
+            <input type="number" id="interestRate" required><br>
+            <button type="submit">Add Term</button>
+        </form>
+    </section>
+
+    <!-- Member Management Form -->
+    <section>
+        <h2>Add New Member</h2>
+        <form id="memberForm">
+            <label for="memberName">Member Name:</label>
+            <input type="text" id="memberName" required><br>
+            <label for="memberShares">Number of Shares:</label>
+            <input type="number" id="memberShares" required><br>
+            <button type="submit">Add Member</button>
+        </form>
+    </section>
+
+    <!-- Loan Management Form -->
+    <section>
+        <h2>Add Loan</h2>
+        <form id="loanForm">
+            <label for="loanMember">Select Member:</label>
+            <select id="loanMember"></select><br>
+            <label for="loanAmount">Loan Amount:</label>
+            <input type="number" id="loanAmount" required><br>
+            <label for="loanDeadline">Loan Deadline:</label>
+            <input type="date" id="loanDeadline" required><br>
+            <button type="submit">Add Loan</button>
+        </form>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section>
+        <h2>Dashboard</h2>
+        <div id="dashboard">
+            <h3>Members</h3>
+            <ul id="memberList"></ul>
+            <h3>Loans</h3>
+            <ul id="loanList"></ul>
+        </div>
+    </section>
+
+    <script>
+        // Arrays to store terms, members, and loans
+        let terms = [];
+        let members = [];
+        let loans = [];
+
+        // Term Form Submit Handler
+        document.getElementById('termForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const termDuration = document.getElementById('termDuration').value;
+            const numShares = document.getElementById('numShares').value;
+            const sharePrice = document.getElementById('sharePrice').value;
+            const interestRate = document.getElementById('interestRate').value;
+            
+            const term = { termDuration, numShares, sharePrice, interestRate };
+            terms.push(term);
+            alert('New term added!');
+        });
+
+        // Member Form Submit Handler
+        document.getElementById('memberForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('memberName').value;
+            const shares = document.getElementById('memberShares').value;
+
+            const member = { name, shares };
+            members.push(member);
+            updateMemberSelect();
+            updateMemberList();
+            alert('New member added!');
+        });
+
+        // Loan Form Submit Handler
+        document.getElementById('loanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const memberId = document.getElementById('loanMember').value;
+            const amount = document.getElementById('loanAmount').value;
+            const deadline = document.getElementById('loanDeadline').value;
+
+            const loan = { memberId, amount, deadline };
+            loans.push(loan);
+            updateLoanList();
+            alert('New loan added!');
+        });
+
+        // Update Member Dropdown in Loan Form
+        function updateMemberSelect() {
+            const loanMember = document.getElementById('loanMember');
+            loanMember.innerHTML = '';
+            members.forEach((member, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.text = member.name;
+                loanMember.appendChild(option);
+            });
+        }
+
+        // Update Member List on Dashboard
+        function updateMemberList() {
+            const memberList = document.getElementById('memberList');
+            memberList.innerHTML = '';
+            members.forEach(member => {
+                const li = document.createElement('li');
+                li.textContent = `${member.name} - ${member.shares} shares`;
+                memberList.appendChild(li);
+            });
+        }
+
+        // Update Loan List on Dashboard
+        function updateLoanList() {
+            const loanList = document.getElementById('loanList');
+            loanList.innerHTML = '';
+            loans.forEach(loan => {
+                const memberName = members[loan.memberId].name;
+                const li = document.createElement('li');
+                li.textContent = `${memberName} borrowed ${loan.amount}, due on ${loan.deadline}`;
+                loanList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
