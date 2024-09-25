@@ -141,3 +141,65 @@ button#nextStep {
 button#nextStep:hover {
     background-color: #E67E22;
 }
+
+/* Media Queries for Tablets (768px and below) */
+@media (max-width: 768px) {
+    nav ul li {
+        display: block;
+        margin: 10px 0;
+    }
+
+    form {
+        padding: 15px;
+    }
+
+    input, select, button {
+        max-width: 100%;
+    }
+
+    table th, table td {
+        font-size: 14px;
+        padding: 8px;
+    }
+}
+
+/* Media Queries for Phones (480px and below) */
+@media (max-width: 480px) {
+    body {
+        margin: 10px;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    form {
+        padding: 10px;
+    }
+
+    input, select, button {
+        max-width: 100%;
+        font-size: 14px;
+        padding: 6px;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 10px 0;
+    }
+
+    table th, table td {
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    button {
+        padding: 8px 16px;
+    }
+
+    button#downloadReport, button#nextStep {
+        width: 100%;
+        padding: 10px;
+    }
+}
