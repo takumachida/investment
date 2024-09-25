@@ -3,14 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Investment Group Management</title>
+    <title>Vision 2024 Part 2 Investment</title>
     <link rel="stylesheet" href="style.css">
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF AutoTable for generating tables in PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+    <!-- XLSX for Excel generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
 </head>
 <body>
-    <h1>Investment Group Management</h1>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#" onclick="showSection('termPage')">Term</a></li>
+                <li><a href="#" onclick="showSection('memberPage')">Add Members</a></li>
+                <li><a href="#" onclick="showSection('loanPage')">Add Loans</a></li>
+                <li><a href="#" onclick="showSection('dashboardPage')">Dashboard</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <!-- Term Management Form -->
-    <section>
+    <h1>Vision 2024 Part 2 Investment</h1>
+
+    <!-- Term Management Page -->
+    <section id="termPage">
         <h2>Add New Term</h2>
         <form id="termForm">
             <label for="termDuration">Term Duration (Months):</label>
@@ -25,9 +42,9 @@
         </form>
     </section>
 
-    <!-- Member Management Form -->
-    <section>
-        <h2>Add New Member</h2>
+    <!-- Member Management Page -->
+    <section id="memberPage" style="display: none;">
+        <h2>Add New Members</h2>
         <form id="memberForm">
             <label for="memberName">Member Name:</label>
             <input type="text" id="memberName" required><br>
@@ -35,11 +52,12 @@
             <input type="number" id="memberShares" required><br>
             <button type="submit">Add Member</button>
         </form>
+        <button id="doneAddingMembers">Done Adding Members</button>
     </section>
 
-    <!-- Loan Management Form -->
-    <section>
-        <h2>Add Loan</h2>
+    <!-- Loan Management Page -->
+    <section id="loanPage" style="display: none;">
+        <h2>Add Loans</h2>
         <form id="loanForm">
             <label for="loanMember">Select Member:</label>
             <select id="loanMember"></select><br>
@@ -49,21 +67,37 @@
             <input type="date" id="loanDeadline" required><br>
             <button type="submit">Add Loan</button>
         </form>
+        <button id="doneAddingLoans">Done Adding Loans</button>
     </section>
 
-    <!-- Dashboard Section -->
-    <section>
+    <!-- Dashboard Page -->
+    <section id="dashboardPage" style="display: none;">
         <h2>Dashboard</h2>
-        <div id="dashboard">
-            <h3>Members</h3>
-            <ul id="memberList"></ul>
-            <h3>Loans</h3>
-            <ul id="loanList"></ul>
-        </div>
+        <table id="dashboardTable" border="1">
+            <thead>
+                <tr>
+                    <th>Member Name</th>
+                    <th>Number of Shares</th>
+                    <th>Invested Amount</th>
+                    <th>Loan Amount</th>
+                    <th>Return Date</th>
+                    <th>Expected Return</th>
+                </tr>
+            </thead>
+            <tbody id="dashboardBody"></tbody>
+        </table>
+
+        <!-- Dropdown to select the file format -->
+        <label for="downloadFormat">Select File Format:</label>
+        <select id="downloadFormat">
+            <option value="pdf">PDF</option>
+            <option value="excel">Excel</option>
+        </select>
+
+        <button id="downloadReport">Download Report</button>
     </section>
 
     <script>
-        // Arrays to store terms, members, and loans
         let terms = [];
         let members = [];
         let loans = [];
@@ -79,6 +113,7 @@
             const term = { termDuration, numShares, sharePrice, interestRate };
             terms.push(term);
             alert('New term added!');
+            showSection('memberPage');
         });
 
         // Member Form Submit Handler
@@ -86,12 +121,19 @@
             e.preventDefault();
             const name = document.getElementById('memberName').value;
             const shares = document.getElementById('memberShares').value;
+            const investedAmount = shares * terms[0].sharePrice;
 
-            const member = { name, shares };
+            const member = { name, shares, investedAmount, loan: 0, expectedReturn: 0 };
             members.push(member);
             updateMemberSelect();
-            updateMemberList();
+            updateDashboardTable();
+            document.getElementById('memberForm').reset(); // Clear form after submit
             alert('New member added!');
+        });
+
+        // Done Adding Members Button Click Handler
+        document.getElementById('doneAddingMembers').addEventListener('click', function() {
+            showSection('loanPage');
         });
 
         // Loan Form Submit Handler
@@ -101,10 +143,17 @@
             const amount = document.getElementById('loanAmount').value;
             const deadline = document.getElementById('loanDeadline').value;
 
-            const loan = { memberId, amount, deadline };
-            loans.push(loan);
-            updateLoanList();
+            members[memberId].loan = amount;
+            members[memberId].expectedReturn = (amount * (1 + (terms[0].interestRate / 100)));
+            loans.push({ memberId, amount, deadline });
+            updateDashboardTable();
+            document.getElementById('loanForm').reset(); // Clear form after submit
             alert('New loan added!');
+        });
+
+        // Done Adding Loans Button Click Handler
+        document.getElementById('doneAddingLoans').addEventListener('click', function() {
+            showSection('dashboardPage');
         });
 
         // Update Member Dropdown in Loan Form
@@ -119,27 +168,84 @@
             });
         }
 
-        // Update Member List on Dashboard
-        function updateMemberList() {
-            const memberList = document.getElementById('memberList');
-            memberList.innerHTML = '';
-            members.forEach(member => {
-                const li = document.createElement('li');
-                li.textContent = `${member.name} - ${member.shares} shares`;
-                memberList.appendChild(li);
+        // Update Dashboard Table
+        function updateDashboardTable() {
+            const dashboardBody = document.getElementById('dashboardBody');
+            dashboardBody.innerHTML = '';
+            members.forEach((member, index) => {
+                const row = document.createElement('tr');
+                const loanDetails = loans.find(loan => loan.memberId == index);
+                const returnDate = loanDetails ? loanDetails.deadline : "N/A";
+                row.innerHTML = `
+                    <td>${member.name}</td>
+                    <td>${member.shares}</td>
+                    <td>${member.investedAmount}</td>
+                    <td>${member.loan}</td>
+                    <td>${returnDate}</td>
+                    <td>${member.expectedReturn}</td>
+                `;
+                dashboardBody.appendChild(row);
             });
         }
 
-        // Update Loan List on Dashboard
-        function updateLoanList() {
-            const loanList = document.getElementById('loanList');
-            loanList.innerHTML = '';
-            loans.forEach(loan => {
-                const memberName = members[loan.memberId].name;
-                const li = document.createElement('li');
-                li.textContent = `${memberName} borrowed ${loan.amount}, due on ${loan.deadline}`;
-                loanList.appendChild(li);
+        // Function to handle PDF and Excel download
+        document.getElementById('downloadReport').addEventListener('click', function() {
+            const format = document.getElementById('downloadFormat').value;
+
+            if (format === 'pdf') {
+                downloadPDFReport();
+            } else if (format === 'excel') {
+                downloadExcelReport();
+            }
+        });
+
+        // Function to generate and download the PDF report
+        function downloadPDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Add a title to the PDF
+            doc.text("Investment Group Report", 10, 10);
+            
+            // Add table using autoTable plugin
+            doc.autoTable({
+                startY: 20,
+                head: [['Member Name', 'Shares', 'Invested Amount', 'Loan Amount', 'Return Date', 'Expected Return']],
+                body: members.map((member, index) => {
+                    const loanDetails = loans.find(loan => loan.memberId == index);
+                    const returnDate = loanDetails ? loanDetails.deadline : "N/A";
+                    return [member.name, member.shares, member.investedAmount, member.loan, returnDate, member.expectedReturn];
+                })
             });
+
+            // Save the PDF
+            doc.save("Investment_Group_Report.pdf");
+        }
+
+        // Function to generate and download the Excel report
+        function downloadExcelReport() {
+            const wb = XLSX.utils.book_new();
+            const ws_data = [
+                ['Member Name', 'Shares', 'Invested Amount', 'Loan Amount', 'Return Date', 'Expected Return'],
+                ...members.map((member, index) => {
+                    const loanDetails = loans.find(loan => loan.memberId == index);
+                    const returnDate = loanDetails ? loanDetails.deadline : "N/A";
+                    return [member.name, member.shares, member.investedAmount, member.loan, returnDate, member.expectedReturn];
+                })
+            ];
+
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "Investment Report");
+
+            // Trigger file download
+            XLSX.writeFile(wb, "Investment_Group_Report.xlsx");
+        }
+
+        // Function to show sections
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => section.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
         }
     </script>
 </body>
